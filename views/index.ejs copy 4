@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.1.6/Chart.min.js"></script>
+  </head>
+  <body>
+  <% var array=[]; %>
+    <div class="container">
+      <div class="page-header">
+        <p class="lead"><h1>Your ideal sleap plan is...</h1></p>
+      </div>
+
+      <% if (authorize_url) { %>
+      <a href="<%= authorize_url %>" class="btn btn-default">Connect with genome</a><p>
+      <% } %>
+
+      <p>What time do you usually have to get up?</p>
+      <form id="target" name="target">
+      <p>
+      <input type="radio" name="hour" value="4" onclick="func()" checked="checked">4
+      <input type="radio" name="hour" value="5" onclick="func()">5
+      <input type="radio" name="hour" value="6" onclick="func()">6
+      <input type="radio" name="hour" value="7" onclick="func()">7
+      <input type="radio" name="hour" value="8" onclick="func()">8
+      </p>
+      </form>
+
+      <script>
+        var element = document.getElementById("target");
+        var getuphour = 4;
+        var parameterLang = decodeURIComponent(location.search.match(/id=(.*?)(&|$)/)[1]);
+        // alert(parameterLang);
+        getuphour = parameterLang;
+        // alert(getuphour);
+        var elements = document.target.hour;
+        elements[getuphour - 4].checked = true;//alert(parameterLang);
+
+        function func() {
+
+            var radioNodeList = element.hour;
+            // alert(radioNodeList.value);
+            window.location.href ="http://127.0.0.1:3000/?id=" + radioNodeList.value;
+        }
+      </script>
+
+      <% if (reports.length > 0) { %>
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Genetic insights</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% for (let report of reports) { %>
+          <tr>
+            <th scope="row"><%= report.phenotype.display_name %></th>
+            <td><%= report.summary.score %> <%= report.summary.text %></td>
+            <% array.push(report.summary.score); %>
+          </tr>
+          <% } %>
+        </tbody>
+      </table>
+      <% } %>
+    </div>
+
+    <canvas id="myChart"></canvas>
+
+    <script>
+    // var arr = [12, 19, 3, 17, 28, 24, 7];
+    // var arr = <% array %>; //NG
+    // alert(<%= array.length %>); //OK
+    // alert(<%= array[1] %>); //OK
+
+    var nap = 0;
+    var l = <%= array[0] %>;
+    switch(l){
+      case 0:
+        nap=6;
+        break;
+      case 1:
+        nap=7;
+        break;
+      case 2:
+        nap=8;
+        break;
+      case 3:
+        nap=9;
+        break;
+      case 4:
+        nap=10;
+        break;
+    }
+
+    var duration = 0;
+    var n = <%= array[1] %>;
+    switch(n){
+      case 0:
+        duration=6;
+        break;
+      case 1:
+        duration=7;
+        break;
+      case 2:
+        duration=8;
+        break;
+      case 3:
+        duration=9;
+        break;
+      case 4:
+        duration=10;
+        break;
+    }
+
+    var morning = 0;
+    var m = <%= array[2] %>;
+    switch(m){
+      case 0:
+        morning=0;
+        break;
+      case 1:
+        morning=0;
+        break;
+      case 2:
+        morning=1;
+        break;
+      case 3:
+        morning=2;
+        break;
+      case 4:
+        morning=3;
+        break;
+    }
+
+    var gotobedhour = 0;
+    if(getuphour - duration < 0){
+      gotobedhour = 24 + (getuphour - duration) - morning;
+      getuphour -= morning;
+    }
+    else if(getuphour - duration > 0){
+      gotobedhour = getuphour - duration - morning;
+      getuphour -= morning;
+    }
+    else{
+      gotobedhour = getuphour - duration - morning;
+      if(gotobedhour < 0) gotobedhour = 24 + gotobedhour;
+      getuphour -= morning;
+    }
+
+      Chart.pluginService.register({
+      			beforeRender: function (chart) {
+      				if (chart.config.options.showAllTooltips) {
+      					// create an array of tooltips
+      					// we can't use the chart tooltip because there is only one tooltip per chart
+      					chart.pluginTooltips = [];
+      					chart.config.data.datasets.forEach(function (dataset, i) {
+      						chart.getDatasetMeta(i).data.forEach(function (sector, j) {
+      							chart.pluginTooltips.push(new Chart.Tooltip({
+      								_chart: chart.chart,
+      								_chartInstance: chart,
+      								_data: chart.data,
+      								_options: chart.options.tooltips,
+      								_active: [sector]
+      							}, chart));
+      						});
+      					});
+
+      					// turn off normal tooltips
+      					chart.options.tooltips.enabled = false;
+      				}
+      			},
+      			afterDraw: function (chart, easing) {
+      				if (chart.config.options.showAllTooltips) {
+      					// we don't want the permanent tooltips to animate, so don't do anything till the animation runs atleast once
+      					if (!chart.allTooltipsOnce) {
+      						if (easing !== 1)
+      							return;
+      						chart.allTooltipsOnce = true;
+      					}
+
+      					// turn on tooltips
+      					chart.options.tooltips.enabled = true;
+      					Chart.helpers.each(chart.pluginTooltips, function (tooltip) {
+      						tooltip.initialize();
+      						tooltip.update();
+      						// we don't actually need this since we are not animating tooltips
+      						tooltip.pivot();
+      						tooltip.transition(easing).draw();
+      					});
+      					chart.options.tooltips.enabled = false;
+      				}
+      			}
+      		})
+
+    var ctx = document.getElementById("myChart").getContext('2d');
+    ctx.canvas.width = 600;
+    ctx.canvas.height = 200;
+    var myChart = new Chart(ctx, {
+      type: 'pie',
+      data: {
+        labels: ["Sleep", "Active", "Nap", "Active"],
+        datasets: [{
+          backgroundColor: [
+            "#3498db",
+            "#2ecc71",
+            "#3498db",
+            "#9b59b6",
+          ],
+          data: [duration, 13.5 - (getuphour + morning), 0.5, 12 - duration + getuphour]
+        }]
+      },
+      options: {
+        showAllTooltips: true,
+        tooltips: {
+          callbacks: {
+            title: function(tooltipItem, data) {
+              return data['labels'][tooltipItem[0]['index']];
+            },
+            label: function(tooltipItem, data) {
+              if(tooltipItem['index'] == 0){
+                addtext = '(' + gotobedhour + " to " + getuphour + ')';
+                return data['datasets'][0]['data'][tooltipItem['index']] + ' hours ' + addtext;
+              }else if(tooltipItem['index'] == 2){
+                addtext = '("12 to 12.5")';
+                return data['datasets'][0]['data'][tooltipItem['index']] + ' hours ' + addtext;
+              }
+              // else
+              //   addtext = '';
+              // return data['datasets'][0]['data'][tooltipItem['index']] + ' hours ' + addtext;
+            },
+            // afterLabel: function(tooltipItem, data) {
+            //   var dataset = data['datasets'][0];
+            //   var percent = Math.round((dataset['data'][tooltipItem['index']] / dataset["_meta"][0]['total']) * 100)
+            //   return '(' + percent + '%)';
+            // }
+          },
+          backgroundColor: '#FFF',
+          titleFontSize: 16,
+          titleFontColor: '#0066ff',
+          bodyFontColor: '#000',
+          bodyFontSize: 14,
+          displayColors: false
+        },
+        cutoutPercentage: 0,
+        rotation: (-0.5 * Math.PI) + (gotobedhour/12 * Math.PI),
+      }
+    });
+    </script>
+  </body>
+</html>

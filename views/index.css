@@ -1,0 +1,9 @@
+input[type="radio"] , input[type="checkbox"]{
+   -webkit-transform: scale(1.5);
+   transform: scale(2.5);
+   margin-right: 0.5em;
+}
+
+body {
+background-color: #cae4ff;
+}

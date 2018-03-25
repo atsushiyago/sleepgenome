@@ -1,0 +1,20 @@
+{
+  "name": "genome-link-example-node-express-app",
+  "version": "0.0.1",
+  "private": true,
+  "dependencies": {
+    "ejs": "latest",
+    "express": "latest",
+    "express-session": "^1.15.6",
+    "genomelink-node": "latest",
+    "request": "latest"
+  },
+  "scripts": {
+    "start": "node app.js"
+  },
+  "description": "## How to run",
+  "main": "app.js",
+  "devDependencies": {},
+  "author": "",
+  "license": "ISC"
+}
